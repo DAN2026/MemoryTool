@@ -1,3 +1,30 @@
-/.venv
-/env
-/trainer.egg-info
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+dist/
+build/
+wheels/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
