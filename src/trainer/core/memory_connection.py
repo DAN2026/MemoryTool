@@ -36,6 +36,7 @@ class MemoryConnection:
         self.__module_base = None
         self.__attach(process_name)
 
+
     def __attach(self, process_name: str) -> None:
         """
         Open the process handle and resolve the `module base address`.
@@ -50,12 +51,16 @@ class MemoryConnection:
         """
 
         try:
-
             self.__pm = pymem.Pymem(process_name)
 
-            self.__module_base = pymem.process.module_from_name(
-                self.__pm.process_handle, process_name
-            ).lpBaseOfDll
+            module = pymem.process.module_from_name(
+                self.__pm.process_handle, process_name  # type: ignore[arg-type]
+            )
+
+            if module is None:
+                raise RuntimeError(f"Module '{process_name}' not found.")
+
+            self.__module_base = int(module.lpBaseOfDll)
 
             logger.success(f"Attached to '{process_name}' @ {hex(self.__module_base)}")
 
