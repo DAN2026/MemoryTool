@@ -1,10 +1,13 @@
 import dearpygui.dearpygui as dpg
-from trainer.ui.themes import build_themes
-from trainer.ui.layout import build_ui
+from trainer.ui.layout import App
 
-def run():
-    pass
+def main():
+    
+    app = App()
+    
+    app.main()
+    
 
 
 if __name__ == "__main__":
-    run()
+    main()

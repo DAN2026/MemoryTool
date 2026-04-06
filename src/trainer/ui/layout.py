@@ -14,7 +14,7 @@ import win32api
 from typing import ClassVar
 from pathlib import Path
 
-class AppLayout():
+class App():
     
     
     __WIDTH: ClassVar[int] = 450
@@ -123,7 +123,3 @@ class AppLayout():
         self.__initialize()
 
     
-if __name__ == "__main__":
-    
-    
-    AppLayout().main()

@@ -9,8 +9,13 @@ dependencies = [
     "pymem",
     "loguru",
     "dearpygui",
-    "pywin32"
+    "pywin32",
+    "nuitka",
+    "zstandard"
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.scripts]
+trainer = "trainer.main:main"
