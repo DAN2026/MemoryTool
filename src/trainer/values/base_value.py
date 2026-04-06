@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Any
 from loguru import logger
 
-from trainer.core.memory_connection import MemoryConnection
-from trainer.core.registry import TYPE_REGISTRY
+from trainer.memory.memory_connection import MemoryConnection
+from trainer.memory.registry import TYPE_REGISTRY
 
 type Address = int
 type MemoryValue = Any

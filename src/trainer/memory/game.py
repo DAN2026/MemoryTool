@@ -1,6 +1,5 @@
-from trainer.core.memory_connection import MemoryConnection
 from trainer.values.fov import FovValue
-
+from trainer.memory.memory_connection import MemoryConnection
 
 class ShooterGame:
     

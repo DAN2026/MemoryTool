@@ -1,30 +1,52 @@
-# Python
+# --- Python Core ---
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.so
 
-# Distribution / packaging
+# --- Nuitka & Compilation ---
+# Nuitka creates a .build directory for C intermediate files
+*.build/
+# Nuitka/Python-to-C generated files
+*.dist/
+*.bin
+*.exe
+*.out
+
+# --- Distribution / Packaging ---
 *.egg-info/
 *.egg
 dist/
 build/
 wheels/
+sdist/
+var/
 
-# Virtual environment
+# --- Virtual Environments ---
 .venv/
 venv/
 env/
+ENV/
+bin/
+lib/
+share/
 
-# IDE
+# --- IDEs & Editors ---
 .vscode/
 .idea/
+*.swp
+*.swo
 *.suo
 *.user
+*.sln
+*.vcxproj
+*.filters
 
-# Logs
+# --- Logs & Metadata ---
 *.log
-
-# OS
 .DS_Store
 Thumbs.db
+.cache/
+.pytest_cache/
+.mypy_cache/
