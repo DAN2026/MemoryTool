@@ -8,6 +8,8 @@ version = "0.1.0"
 dependencies = [
     "pymem",
     "loguru",
+    "dearpygui",
+    "pywin32"
 ]
 
 [tool.setuptools.packages.find]

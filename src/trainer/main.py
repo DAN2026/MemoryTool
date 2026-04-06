@@ -1,13 +1,10 @@
-from trainer.game import ShooterGame
+import dearpygui.dearpygui as dpg
+from trainer.ui.themes import build_themes
+from trainer.ui.layout import build_ui
 
-
-def main():
-    game = ShooterGame()
-
-    game.fov.set(1.25)
-    
-    game.previewmode.set(6)
+def run():
+    pass
 
 
 if __name__ == "__main__":
-    main()
+    run()
