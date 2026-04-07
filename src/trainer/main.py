@@ -12,10 +12,10 @@
 #     main()
 
 import dearpygui.dearpygui as dpg
-
 from trainer.ui.app import App
 
 def main() -> None:
+    
     __app = App()
     
     __app.start()

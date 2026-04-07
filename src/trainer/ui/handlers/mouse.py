@@ -15,6 +15,12 @@ class MouseHandler(BaseHandler):
             
     @staticmethod
     def _static_drag_viewport(sender, app_data):
+        
+        window = dpg.get_active_window()
+        
+        if window == 112:
+            return
+        
         if app_data and len(app_data) >= 3:
             dx, dy = app_data[1], app_data[2]
             if dx != 0 or dy != 0:
