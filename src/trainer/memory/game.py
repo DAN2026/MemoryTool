@@ -1,6 +1,9 @@
 from trainer.memory.memory_connection import MemoryConnection
 from trainer.values.fov import FovValue
 from trainer.values.prevviewmode import PrevviewmodeValue
+from trainer.values.mipbias import MipbiasValue
+from trainer.values.environment import EnvironmentValue
+from trainer.values.testingini import TestingtINI
 from loguru import logger
 
 
@@ -16,8 +19,10 @@ class ShooterGame:
         self._conn = MemoryConnection("ShooterGame.exe", auto_attach=True)  
         self.fov = FovValue(self._conn)
         self.ini = PrevviewmodeValue(self._conn)
-
-
+        self.mipbias = MipbiasValue(self._conn)
+        self.testing_ini = TestingtINI(self._conn)
+        self.environment = EnvironmentValue(self._conn)
+        
     def reconnect(self) -> bool:
         success = self._conn.reconnect()
 
@@ -31,6 +36,12 @@ class ShooterGame:
     def disconnect(self) -> None:
         """Cleanly release the process handle."""
         self._conn.disconnect()
+
+
+    @property
+    def is_running(self) -> bool:
+        
+        return self._conn.is_running()
 
     @property
     def is_connected(self) -> bool:

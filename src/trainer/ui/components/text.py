@@ -10,8 +10,8 @@ class TextComponent(BaseComponent):
     """
     A customizable text component encapsulated within a `child_window`.
 
-    Supports dynamic positioning and a configurable vertical indent to 
-    manually offset the text from the top of the container.
+    Supports optional positioning; if no position is provided, it respects
+    the layout flow of its parent container.
     """
 
     __slots__ = (
@@ -31,9 +31,9 @@ class TextComponent(BaseComponent):
         self,
         tag: str,
         text: str,
-        pos: List[float],
         width: float,
         height: float,
+        pos: Optional[List[float]] = None,
         y_indent: float = 0.0,
         show: bool = True,
         theme: Optional[Union[int, str]] = None,
@@ -41,23 +41,11 @@ class TextComponent(BaseComponent):
         color: Optional[List[int]] = None,
     ) -> None:
         """
-        Initializes the `TextComponent`.
-
-        Args:
-            tag (str): Unique identifier for the component.
-            text (str): The string content to display.
-            pos (List[float]): [x, y] coordinates for the container.
-            width (float): Width of the containing child window.
-            height (float): Height of the containing child window.
-            y_indent (float): Vertical offset from the top of the container.
-            show (bool): Initial visibility state of the component.
-            theme (Optional[Union[int, str]]): Theme for the container.
-            font (Optional[Union[int, str]]): Font registry for the text.
-            color (Optional[List[int]]): Optional RGBA override for the text.
+        Initializes the TextComponent.
         """
         self.__tag: str = tag
         self.__text: str = text
-        self.__pos: List[float] = pos
+        self.__pos: Optional[List[float]] = pos
         self.__width: float = width
         self.__height: float = height
         self.__y_indent: float = y_indent
@@ -70,7 +58,7 @@ class TextComponent(BaseComponent):
 
     def build(self) -> None:
         """
-        Constructs the text element inside a child window with a vertical offset.
+        Constructs the text element inside a child window.
         """
         try:
             with dpg.child_window(
@@ -82,7 +70,9 @@ class TextComponent(BaseComponent):
                 no_scroll_with_mouse=True,
                 show=self.__show,
             ) as container:
-                dpg.set_item_pos(container, self.__pos)
+
+                if self.__pos is not None:
+                    dpg.set_item_pos(container, self.__pos)
 
                 if self.__theme:
                     themes.apply(container, self.__theme)
@@ -106,16 +96,13 @@ class TextComponent(BaseComponent):
 
     def tick(self) -> None:
         """
-        Static visual component.
+        Static visual component update logic.
         """
         pass
 
     def toggle(self, show: bool) -> None:
         """
         Updates the visibility of the component.
-
-        Args:
-            show (bool): The new visibility state.
         """
         self.__show = show
         if dpg.does_item_exist(self.__tag):
@@ -124,9 +111,6 @@ class TextComponent(BaseComponent):
     def set_pos(self, pos: List[float]) -> None:
         """
         Updates the container position.
-
-        Args:
-            pos (List[float]): The new [x, y] coordinates.
         """
         self.__pos = pos
         if dpg.does_item_exist(self.__tag):
@@ -135,9 +119,6 @@ class TextComponent(BaseComponent):
     def set_y_indent(self, y_indent: float) -> None:
         """
         Updates the vertical offset of the text within the container.
-
-        Args:
-            y_indent (float): The new vertical offset.
         """
         self.__y_indent = y_indent
         label_tag = f"{self.__tag}_label"
@@ -147,9 +128,6 @@ class TextComponent(BaseComponent):
     def set_text(self, text: str) -> None:
         """
         Updates the internal text value.
-
-        Args:
-            text (str): The new string value to display.
         """
         self.__text = text
         label_tag = f"{self.__tag}_label"
@@ -164,7 +142,7 @@ class TextComponent(BaseComponent):
         return self.__tag
 
     @property
-    def pos(self) -> List[float]:
+    def pos(self) -> Optional[List[float]]:
         """
         Returns the current [x, y] position.
         """

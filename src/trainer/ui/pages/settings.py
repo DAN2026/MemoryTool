@@ -13,7 +13,7 @@ class SettingsPage(BasePage):
 
     __slots__ = ("__reconnect_btn",)
 
-    __HEIGHT: ClassVar[float] = 377.5
+    __HEIGHT: ClassVar[float] = 395.0
     __WIDTH: ClassVar[float] = 425.0
 
     def __init__(self) -> None:

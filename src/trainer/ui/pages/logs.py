@@ -11,7 +11,7 @@ class LogsPage(BasePage):
     """
     __slots__ = ("__log_buffer",)
 
-    __HEIGHT: ClassVar[float] = 377.5
+    __HEIGHT: ClassVar[float] = 395.0
     __WIDTH: ClassVar[float] = 425.0
 
     def __init__(self) -> None:

@@ -18,12 +18,13 @@ class Icons(BaseStyle):
     
     ICONS: ClassVar[list[str]] = [
         "eye",
-        "bug",
         "settings",
         "logs",
         "discord",
         "arkopedia",
-        "logout"
+        "logout",
+        "folder",
+        "stats"
     ]
 
     def register(self) -> None:

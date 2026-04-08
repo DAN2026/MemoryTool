@@ -1,4 +1,4 @@
-from typing import Callable, Optional, List, Tuple, Any
+from typing import Callable, Optional, List, Tuple, Any, Union
 import dearpygui.dearpygui as dpg
 import time
 from loguru import logger
@@ -9,47 +9,38 @@ from trainer.ui.common.math import Math
 class Toggle(BaseComponent):
     """
     A custom animated toggle switch component using `Dear PyGui` drawing primitives.
-    
-    This component manages a boolean state with a smooth linear interpolation (LERP)
-    animation between 'On' and 'Off' visual states.
+    Supports relative indentation for X and Y via the `pos` parameter.
     """
     __slots__ = (
         "__parent", "__label", "__is_enabled", "__animation_progress", 
         "__animation_duration", "__last_frame_time", "__on_change_callback", 
         "__width", "__height", "__knob_start_x", "__knob_end_x", 
         "__knob_radius", "__drawlist_tag", "__track_tag", "__knob_tag", 
-        "__handler_registry"
+        "__handler_registry", "__pos"
     )
 
-    __TRACK_OFF_COLOR: Tuple[int, int, int, int] = (60, 60, 60, 255)
-    __TRACK_ON_COLOR: Tuple[int, int, int, int] = (0, 149, 255, 255)
+    __TRACK_OFF_COLOR: Tuple[int, int, int, int] = (40, 40, 40, 255)
+    __TRACK_ON_COLOR: Tuple[int, int, int, int] = (1, 180, 240, 255)
     __KNOB_COLOR: Tuple[int, int, int, int] = (255, 255, 255, 255)
 
     def __init__(
         self,
-        parent: str | int,
+        parent: Union[str, int],
         label: str = "",
         default_state: bool = False,
         animation_duration: float = 0.15,
         callback: Optional[Callable[[bool], None]] = None,
         width: int = 44,
         height: int = 24,
+        pos: Optional[Union[List[float], Tuple[float, float], float]] = None,
     ) -> None:
         """
-        Initializes the toggle component and calculates spatial boundaries.
-
         Args:
-            parent (str | int): The DPG container identifier.
-            label (str): A unique string used for identification in logs.
-            default_state (bool): The initial boolean value of the toggle.
-            animation_duration (float): Seconds taken to complete the transition.
-            callback (Optional[Callable]): Executed when the state toggles.
-            width (int): Total pixel width of the toggle track.
-            height (int): Total pixel height of the toggle track.
+            pos: If float, indents X. If Tuple/List (x, y), indents both X and Y.
         """
         super().__init__()
         
-        self.__parent: str | int = parent
+        self.__parent: Union[str, int] = parent
         self.__label: str = label
         self.__is_enabled: bool = default_state
         self.__animation_progress: float = 1.0 if default_state else 0.0
@@ -58,6 +49,7 @@ class Toggle(BaseComponent):
         self.__on_change_callback: Optional[Callable[[bool], None]] = callback
         self.__width: int = width
         self.__height: int = height
+        self.__pos: Optional[Union[List[float], Tuple[float, float], float]] = pos
 
         padding: int = 3
         self.__knob_start_x: float = float(padding)
@@ -65,34 +57,46 @@ class Toggle(BaseComponent):
         self.__knob_radius: float = (height / 2.0) - padding
 
     def build(self) -> None:
-        
         """
-        Constructs the visual primitives and binds interaction handlers.
+        Constructs the visual primitives using spacers for relative indentation.
         """
-        
-        with dpg.group(horizontal=True, parent=self.__parent):
-            self.__drawlist_tag = dpg.add_drawlist(width=self.__width, height=self.__height)
+        with dpg.group(parent=self.__parent):
+            
+            if isinstance(self.__pos, (list, tuple)) and len(self.__pos) >= 2:
+                if self.__pos[1] > 0:
+                    dpg.add_spacer(height=self.__pos[1])
 
-            self.__track_tag = dpg.draw_rectangle(
-                pmin=(0, 0),
-                pmax=(self.__width, self.__height),
-                color=(0, 0, 0, 0),
-                fill=self.__TRACK_ON_COLOR if self.__is_enabled else self.__TRACK_OFF_COLOR,
-                rounding=self.__height / 2.0,
-                parent=self.__drawlist_tag,
-            )
+            with dpg.group(horizontal=True):
+                
+                # 2. Handle X Indentation (Relative)
+                if isinstance(self.__pos, (int, float)):
+                    dpg.add_spacer(width=self.__pos)
+                elif isinstance(self.__pos, (list, tuple)) and len(self.__pos) >= 1:
+                    if self.__pos[0] > 0:
+                        dpg.add_spacer(width=self.__pos[0])
 
-            initial_knob_x: float = (
-                self.__knob_end_x if self.__is_enabled else self.__knob_start_x
-            ) + self.__knob_radius
+                self.__drawlist_tag = dpg.add_drawlist(width=self.__width, height=self.__height)
 
-            self.__knob_tag = dpg.draw_circle(
-                center=(initial_knob_x, self.__height / 2.0),
-                radius=self.__knob_radius,
-                color=(0, 0, 0, 0),
-                fill=self.__KNOB_COLOR,
-                parent=self.__drawlist_tag,
-            )
+                self.__track_tag = dpg.draw_rectangle(
+                    pmin=(0, 0),
+                    pmax=(self.__width, self.__height),
+                    color=(0, 0, 0, 0),
+                    fill=self.__TRACK_ON_COLOR if self.__is_enabled else self.__TRACK_OFF_COLOR,
+                    rounding=self.__height / 2.0,
+                    parent=self.__drawlist_tag,
+                )
+
+                initial_knob_x: float = (
+                    self.__knob_end_x if self.__is_enabled else self.__knob_start_x
+                ) + self.__knob_radius
+
+                self.__knob_tag = dpg.draw_circle(
+                    center=(initial_knob_x, self.__height / 2.0),
+                    radius=self.__knob_radius,
+                    color=(0, 0, 0, 0),
+                    fill=self.__KNOB_COLOR,
+                    parent=self.__drawlist_tag,
+                )
 
         self.__handler_registry = dpg.add_item_handler_registry()
         dpg.add_item_clicked_handler(
@@ -104,21 +108,12 @@ class Toggle(BaseComponent):
         super().build()
 
     def __handle_interaction(self, *args: Any) -> None:
-        
-        """
-        Internal logic to flip state and trigger external callbacks.
-        """
-        
         self.value = not self.__is_enabled
         logger.debug(f"Toggle `{self.__label}` switched to: {self.__is_enabled}")
-        
         if self.__on_change_callback:
             self.__on_change_callback(self.__is_enabled)
 
     def tick(self) -> None:
-        """
-        Calculates delta time and updates LERP values for the visual transition.
-        """
         current_time: float = time.time()
         delta_time: float = current_time - self.__last_frame_time
         self.__last_frame_time = current_time
@@ -146,15 +141,9 @@ class Toggle(BaseComponent):
 
     @property
     def value(self) -> bool:
-        """
-        Returns the current boolean state of the toggle.
-        """
         return self.__is_enabled
 
     @value.setter
     def value(self, new_state: bool) -> None:
-        """
-        Updates the toggle state and prepares the animation for the next tick.
-        """
         if self.__is_enabled != new_state:
             self.__is_enabled = new_state

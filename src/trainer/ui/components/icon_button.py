@@ -36,7 +36,7 @@ class IconButtonComponent(BaseComponent):
         tag: str,
         icon_name: str,
         theme: Union[int, str],
-        pos: List[float],
+        pos: Optional[List[float]] = None, # Default to None for auto-layout
         width: float = 55.0,
         height: float = 55.0,
         x_indent: float = 0.0,
@@ -52,7 +52,7 @@ class IconButtonComponent(BaseComponent):
             tag (str): Unique identifier for the component.
             icon_name (str): Key for the icon texture.
             theme (Union[int, str]): Theme to apply to the container.
-            pos (List[float]): [x, y] coordinates.
+            pos (Optional[List[float]]): [x, y] coordinates. If None, stays in parent flow.
             width (float): Width of the child window container.
             height (float): Height of the child window container.
             x_indent (float): Horizontal offset for the icon within the container.
@@ -64,7 +64,7 @@ class IconButtonComponent(BaseComponent):
         self.__tag: str = tag
         self.__icon_name: str = icon_name
         self.__theme: Union[int, str] = theme
-        self.__pos: List[float] = pos
+        self.__pos: Optional[List[float]] = pos
         self.__width: float = width
         self.__height: float = height
         self.__x_indent: float = x_indent
@@ -78,7 +78,7 @@ class IconButtonComponent(BaseComponent):
 
     def build(self) -> None:
         """
-        Builds the UI with configurable container dimensions and icon offsets.
+        Builds the UI. Respects manual positioning only if a value is provided.
         """
         try:
             with dpg.child_window(
@@ -90,7 +90,11 @@ class IconButtonComponent(BaseComponent):
                 no_scroll_with_mouse=True,
                 show=self.__show,
             ) as container:
-                dpg.set_item_pos(container, self.__pos)
+                
+                # Only apply position if specifically requested
+                if self.__pos is not None:
+                    dpg.set_item_pos(container, self.__pos)
+                
                 themes.apply(container, self.__theme)
 
                 icon_item = dpg.add_image(
@@ -99,6 +103,7 @@ class IconButtonComponent(BaseComponent):
                     height=self.__icon_size,
                 )
                 
+                # Internal alignment remains relative to the child_window
                 dpg.set_item_pos(icon_item, [self.__x_indent, self.__y_indent])
 
             self.__handler = ButtonHandler(
@@ -136,7 +141,7 @@ class IconButtonComponent(BaseComponent):
 
     def set_pos(self, pos: List[float]) -> None:
         """
-        Updates the component position.
+        Updates the component position manually.
         """
         self.__pos = pos
         if dpg.does_item_exist(self.__tag):
