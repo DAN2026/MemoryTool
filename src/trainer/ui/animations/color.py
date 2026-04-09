@@ -1,17 +1,9 @@
-from typing import List, Tuple, Optional, Union
 import time
+from typing import List, Tuple, Optional, Union
 import dearpygui.dearpygui as dpg
 
-class ColorTransition:
-    """
-    `ColorTransition` synchronizes background interpolation for nested UI components
-    by targeting the parent container while monitoring children for interaction.
-    """
 
-    __slots__ = (
-        "__target", "__initial", "__final", "__duration",
-        "__t", "__last", "__theme", "__color_items", "__related_items"
-    )
+class ColorTransition:
 
     def __init__(
         self,
@@ -19,12 +11,12 @@ class ColorTransition:
         initial: Tuple[int, int, int, int],
         final: Tuple[int, int, int, int],
         duration: float = 0.15,
-        related_items: Optional[List[Union[str, int]]] = None
+        related_items: Optional[List[Union[str, int]]] = None,
     ) -> None:
-        self.__target: Union[str, int] = target
-        self.__initial: Tuple[int, int, int, int] = initial
-        self.__final: Tuple[int, int, int, int] = final
-        self.__duration: float = duration
+        self.__target = target
+        self.__initial = initial
+        self.__final = final
+        self.__duration = duration
         self.__related_items: List[Union[str, int]] = related_items or []
         self.__t: float = 0.0
         self.__last: float = time.time()
@@ -33,15 +25,11 @@ class ColorTransition:
         with dpg.theme() as self.__theme:
             with dpg.theme_component(dpg.mvAll):
                 for slot in [
-                    dpg.mvThemeCol_ChildBg, 
-                    dpg.mvThemeCol_Header, 
-                    dpg.mvThemeCol_FrameBg
+                    dpg.mvThemeCol_ChildBg,
+                    dpg.mvThemeCol_Header,
+                    dpg.mvThemeCol_FrameBg,
                 ]:
-                    item = dpg.add_theme_color(
-                        slot, 
-                        initial, 
-                        category=dpg.mvThemeCat_Core
-                    )
+                    item = dpg.add_theme_color(slot, initial, category=dpg.mvThemeCat_Core)
                     self.__color_items.append(item)
 
                 dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 6)
@@ -63,14 +51,18 @@ class ColorTransition:
 
         direction: int = 1 if is_hovered else -1
 
-        if (direction == 1 and self.__t < 1.0) or (direction == -1 and self.__t > 0.0):
-            self.__t += direction * (delta / self.__duration)
-            self.__t = max(0.0, min(1.0, self.__t))
+        if direction == 1 and self.__t >= 1.0:
+            return
+        if direction == -1 and self.__t <= 0.0:
+            return
 
-            new_color: List[float] = [
-                self.__initial[i] + (self.__final[i] - self.__initial[i]) * self.__t
-                for i in range(4)
-            ]
+        self.__t += direction * (delta / self.__duration)
+        self.__t = max(0.0, min(1.0, self.__t))
 
-            for color_item in self.__color_items:
-                dpg.set_value(color_item, new_color)
+        new_color = tuple(
+            self.__initial[i] + (self.__final[i] - self.__initial[i]) * self.__t
+            for i in range(4)
+        )
+
+        for color_item in self.__color_items:
+            dpg.set_value(color_item, new_color)

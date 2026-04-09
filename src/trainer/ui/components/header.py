@@ -1,6 +1,6 @@
 from trainer.ui.components.base import BaseComponent
 import dearpygui.dearpygui as dpg
-from trainer.ui.animations.animations import ColorTransition
+from trainer.ui.animations.color import ColorTransition
 from trainer.ui.common.math import Math
 from trainer.ui.styles import fonts, themes
 

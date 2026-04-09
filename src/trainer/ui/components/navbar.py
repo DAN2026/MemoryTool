@@ -2,7 +2,7 @@ from typing import Callable, List, Tuple, Any
 import dearpygui.dearpygui as dpg
 from trainer.ui.components.base import BaseComponent
 from trainer.ui.styles import fonts, themes, icons
-from trainer.ui.animations.animations import UnderlineTransition
+from trainer.ui.animations.underline import UnderlineTransition
 from trainer.ui.common.math import Math
 
 
@@ -59,7 +59,7 @@ class NavbarComponent(BaseComponent):
         nav_items: List[Tuple[str, str, float, float, Callable]] = [
             ("eye", "Visuals", 60.0, 42.5, self.show_visuals),
             ("logs", "Logs", 65.0, 60.0, self.show_logs),
-            ("stats", "Stats", 52.5, 42.5, self.show_stats),
+            ("stats", "Stats", 57.5, 47.5, self.show_stats),
             ("settings", "Settings", 60.0, 32.5, self.show_settings),
         ]
 

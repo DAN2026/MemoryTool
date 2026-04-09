@@ -120,7 +120,23 @@ class Themes(BaseStyle):
             with dpg.theme_component(dpg.mvText):
                 dpg.add_theme_color(dpg.mvThemeCol_Text, [255, 0, 0, 255])
         return theme
-
+    
+    @property
+    def footer_sucess(self) -> int:
+        """
+        Theme identifier for the footer error state with red text.
+        """
+        with dpg.theme() as theme:
+            with dpg.theme_component(dpg.mvChildWindow):
+                dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 6)
+                dpg.add_theme_style(dpg.mvStyleVar_ChildBorderSize, 0)
+                dpg.add_theme_style(dpg.mvStyleVar_ScrollbarSize, 10)
+                dpg.add_theme_style(dpg.mvStyleVar_ScrollbarRounding, 6)
+                dpg.add_theme_color(dpg.mvThemeCol_ChildBg, self.__BG_PRIMARY)
+            with dpg.theme_component(dpg.mvText):
+                dpg.add_theme_color(dpg.mvThemeCol_Text, [0, 255, 0, 255])
+        return theme
+    
     @property
     def header(self) -> int:
         """

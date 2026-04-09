@@ -1,7 +1,7 @@
 from trainer.values.base_value import BaseValue
 
 
-class EnvironmentValue(BaseValue):
+class BeerValue(BaseValue):
 
     @property
     def base_offset(self) -> int:
@@ -9,7 +9,7 @@ class EnvironmentValue(BaseValue):
 
     @property
     def offsets(self) -> list[int]:
-        return [0x260, 0xEB8]
+        return [0x268, 0xEC0]
 
     @property
     def value_type(self) -> str:

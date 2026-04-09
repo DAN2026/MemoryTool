@@ -11,6 +11,9 @@ dependencies = [
     "dearpygui",
     "nuitka",
     "zstandard",
+    "blinker",
+    "psutil",
+    "requests",
 ]
 
 [tool.setuptools.packages.find]

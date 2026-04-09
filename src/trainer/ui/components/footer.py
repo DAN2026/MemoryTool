@@ -1,10 +1,9 @@
 import threading
 import webbrowser
-from typing import ClassVar, Callable, Optional, List, Union
+from typing import ClassVar, Callable, Optional, List, Union, Any
 import dearpygui.dearpygui as dpg
 from loguru import logger
 
-from trainer.memory.game import ShooterGame
 from trainer.ui.components.base import BaseComponent
 from trainer.ui.components.icon_button import IconButtonComponent
 from trainer.ui.components.vertical_seperator import VerticalSeparatorComponent
@@ -12,14 +11,14 @@ from trainer.ui.components.reconnect import ReconnectButtonComponent
 from trainer.ui.components.text import TextComponent
 from trainer.ui.styles import themes, fonts
 from trainer.ui.animations.color import ColorTransition
+from trainer.events.signals import on_connection_change, request_reconnect, request_shutdown
 
 
 class FooterComponent(BaseComponent):
     """
     Component responsible for rendering and handling interactions for the footer UI.
 
-    Manages status labels, navigation icons, and dynamic background color transitions
-    for interactive elements including a white-to-grey Discord icon background.
+    Fully decoupled from game logic; communicates via signals for connection states.
     """
 
     __HEIGHT: ClassVar[float] = 55.0
@@ -27,38 +26,39 @@ class FooterComponent(BaseComponent):
     __Y_POS: ClassVar[float] = 535.5
     __X_POS: ClassVar[float] = 12.5
     __RECONNECT_DELAY: ClassVar[float] = 0.55
-    __ERROR_DURATION: ClassVar[float] = 3.0
-    __DISCORD_URL: ClassVar[str] = "https://discord.gg/XXQNVqzm2G"
+    __PROMPT_DURATION: ClassVar[float] = 3.0
+    __DISCORD_URL: ClassVar[str] = "https://discord.gg/yrFgV5Y3aa"
 
     __slots__ = (
-        "__ark",
         "__icons",
         "__reconnect_btn",
         "__logout_btn",
         "__status_label",
-        "__error_label",
+        "__prompt_label",
         "__seperator",
         "__status",
         "__transitions",
+        "__prompt_timer",
+        "__reconnect_timer",
     )
 
-    def __init__(self, ark: ShooterGame) -> None:
+    def __init__(self) -> None:
         """
-        Initializes the footer component with game state and animation tracking.
-
-        Args:
-            ark: The ShooterGame memory instance.
+        Initializes the footer and connects the connection change signal.
         """
         super().__init__()
-        self.__ark: ShooterGame = ark
         self.__icons: List[IconButtonComponent] = []
         self.__reconnect_btn: Optional[ReconnectButtonComponent] = None
         self.__logout_btn: Optional[IconButtonComponent] = None
         self.__status_label: Optional[TextComponent] = None
-        self.__error_label: Optional[TextComponent] = None
+        self.__prompt_label: Optional[TextComponent] = None
         self.__seperator: Optional[VerticalSeparatorComponent] = None
-        self.__status: str = "Connected"
+        self.__status: str = "Disconnected"
         self.__transitions: List[ColorTransition] = []
+        self.__prompt_timer: Optional[threading.Timer] = None
+        self.__reconnect_timer: Optional[threading.Timer] = None
+
+        on_connection_change.connect(self.__on_connection_signal)
 
     def build(self) -> None:
         """
@@ -74,18 +74,18 @@ class FooterComponent(BaseComponent):
             on_click=self.__on_arkopedia_click,
         )
 
-        self.__error_label = TextComponent(
-            tag="footer_error_text",
-            text="Ark Survival Evolved is not open",
+        self.__prompt_label = TextComponent(
+            tag="footer_prompt_text",
+            text="",
             pos=[self.__X_POS + 75, self.__Y_POS + 10],
-            width=200,
+            width=250,
             height=20,
             y_indent=0,
             show=False,
             font=fonts.font_18,
             theme=themes.footer_error,
         )
-        self.__error_label.build()
+        self.__prompt_label.build()
 
         self.__status_label = TextComponent(
             tag="footer_status_text",
@@ -107,7 +107,7 @@ class FooterComponent(BaseComponent):
             width=self.__ICON_SIZE,
             height=self.__ICON_SIZE,
             icon_size=26.0,
-            show=True,
+            show=False,
             on_click=self.__on_logout_click,
             x_indent=16,
             y_indent=13.5,
@@ -120,7 +120,7 @@ class FooterComponent(BaseComponent):
             width=self.__ICON_SIZE,
             height=self.__ICON_SIZE,
             theme=themes.container,
-            show=False,
+            show=True,
             on_click=self.__execute_reconnect_logic,
         )
         self.__reconnect_btn.build()
@@ -145,35 +145,24 @@ class FooterComponent(BaseComponent):
         )
 
         self.__transitions.append(
-            ColorTransition(
-                "footer-arkopedia-icon", (20, 20, 20, 255), (0, 28, 28, 255)
-            )
+            ColorTransition("footer-arkopedia-icon", (20, 20, 20, 255), (0, 28, 28, 255))
         )
         self.__transitions.append(
-            ColorTransition(
-                "footer-logout-icon", (20, 20, 20, 255), (28, 28, 28, 255)
-            )
+            ColorTransition("footer-logout-icon", (20, 20, 20, 255), (28, 28, 28, 255))
         )
         self.__transitions.append(
-            ColorTransition(
-                "footer_reconnect_btn", (20, 20, 20, 255), (28, 28, 28, 255)
-            )
+            ColorTransition("footer_reconnect_btn", (20, 20, 20, 255), (28, 28, 28, 255))
         )
         self.__transitions.append(
-            ColorTransition(
-                "footer-discord-icon", (255, 255, 255, 255), (180, 180, 180, 255)
-            )
+            ColorTransition("footer-discord-icon", (255, 255, 255, 255), (180, 180, 180, 255))
         )
 
-        self.set_status(self.__ark.is_connected)
         super().build()
+        request_reconnect.send(self)
 
     def set_status(self, connected: bool) -> None:
         """
-        Updates UI visibility and labels based on the game connection state.
-
-        Args:
-            connected: The current connection status.
+        Updates UI visibility and labels based on signal state.
         """
         self.__status = "Connected" if connected else "Disconnected"
 
@@ -186,12 +175,11 @@ class FooterComponent(BaseComponent):
         if self.__reconnect_btn:
             self.__reconnect_btn.toggle(show=not connected)
 
+        self.__display_connection_prompt(connected)
+
     def tick(self) -> None:
         """
-        Processes animations and polls for game connection changes.
-
-        Utilizes check_connection() to verify if memory addresses are still
-        reachable by the process handle.
+        Processes animations for interactive elements.
         """
         for transition in self.__transitions:
             transition.tick()
@@ -205,52 +193,76 @@ class FooterComponent(BaseComponent):
         if self.__reconnect_btn:
             self.__reconnect_btn.tick()
 
-        if self.__status == "Connected":
-            # Using the new check_connection logic to detect handle/memory invalidation
-            if not self.__ark._conn.check_connection():
-                logger.warning("ShooterGame.exe memory is no longer reachable. Disconnecting...")
-                self.__ark.disconnect()
-                self.set_status(False)
+    def __cancel_prompt_timer(self) -> None:
+        """
+        Cancels any pending prompt hide timer.
+        """
+        if self.__prompt_timer and self.__prompt_timer.is_alive():
+            self.__prompt_timer.cancel()
+        self.__prompt_timer = None
+
+    def __cancel_reconnect_timer(self) -> None:
+        """
+        Cancels any pending reconnect timer.
+        """
+        if self.__reconnect_timer and self.__reconnect_timer.is_alive():
+            self.__reconnect_timer.cancel()
+        self.__reconnect_timer = None
+
+    def __display_connection_prompt(self, success: bool) -> None:
+        """
+        Displays a temporary success or error message with appropriate styling.
+        """
+        if not self.__prompt_label:
+            return
+
+        self.__cancel_prompt_timer()
+
+        text: str = "Successfully connected to Ark" if success else "Ark Survival Evolved is not open"
+        theme: Any = themes.footer_sucess if success else themes.footer_error
+
+        self.__prompt_label.set_text(text)
+        dpg.bind_item_theme(self.__prompt_label.tag, theme)
+        self.__prompt_label.toggle(show=True)
+
+        self.__prompt_timer = threading.Timer(
+            self.__PROMPT_DURATION,
+            lambda: self.__prompt_label.toggle(show=False) if self.__prompt_label else None,
+        )
+        self.__prompt_timer.daemon = True
+        self.__prompt_timer.start()
+
+    def __on_connection_signal(self, sender: Any, connected: bool, **kwargs: Any) -> None:
+        """
+        Updates the footer status when a connection signal is received.
+        """
+        self.set_status(connected)
 
     def __execute_reconnect_logic(self, tag: str) -> None:
         """
-        Handles the reconnection attempt and temporary error display.
-
-        Args:
-            tag: The tag of the sender component.
+        Broadcasts a reconnection request after a short delay to allow animations.
         """
-        logger.debug(f"Attempting game reconnection via `{tag}`...")
-        success: bool = self.__ark.reconnect()
-
-        if not success and self.__error_label:
-            self.__error_label.toggle(show=True)
-            threading.Timer(
-                self.__ERROR_DURATION,
-                lambda: self.__error_label.toggle(show=False),
-            ).start()
-
-        threading.Timer(
-            self.__RECONNECT_DELAY, lambda: self.set_status(success)
-        ).start()
+        logger.debug(f"Queuing reconnection request via `{tag}`...")
+        self.__cancel_reconnect_timer()
+        self.__reconnect_timer = threading.Timer(
+            self.__RECONNECT_DELAY, lambda: request_reconnect.send(self)
+        )
+        self.__reconnect_timer.daemon = True
+        self.__reconnect_timer.start()
 
     def __on_logout_click(self, tag: str) -> None:
         """
-        Stops the application runtime.
-
-        Args:
-            tag: The tag of the sender component.
+        Cancels pending timers, requests a clean shutdown, then stops DPG.
         """
-        logger.info(f"Logout triggered via `{tag}`. Closing application...")
+        self.__cancel_prompt_timer()
+        self.__cancel_reconnect_timer()
+        request_shutdown.send(self)
         dpg.stop_dearpygui()
 
     def __on_discord_click(self, tag: str) -> None:
         """
         Redirects the user to the Discord URL.
-
-        Args:
-            tag: The tag of the sender component.
         """
-        logger.info(f"Opening Discord link via `{tag}`...")
         webbrowser.open(self.__DISCORD_URL)
 
     def __add_icon(
@@ -281,8 +293,5 @@ class FooterComponent(BaseComponent):
     def __on_arkopedia_click(self, tag: str) -> None:
         """
         Branding redirect callback.
-
-        Args:
-            tag: The tag of the sender component.
         """
         webbrowser.open(self.__DISCORD_URL)

@@ -1,6 +1,7 @@
 from typing import Dict, List, Type, Union, Callable, Any
 import dearpygui.dearpygui as dpg
 from loguru import logger
+import time
 
 from trainer.memory.game import ShooterGame
 from trainer.ui.handlers.base import BaseHandler
@@ -70,6 +71,8 @@ class App:
             "stats-container",
             "settings-container",
         ]
+        
+        
 
     def __register_handlers(self) -> None:
         """
@@ -94,10 +97,14 @@ class App:
                 if is_target:
                     dpg.set_item_pos(page_tag, [self.__CONTENT_X, self.__CONTENT_Y])
 
+    def __fps_cap(self, fps: int = 60) -> None:
+        time.sleep(1 / fps)
+
     def __on_tick(self) -> None:
         """
         Propagates the tick update to all active UI elements.
         """
+        
         for element in self.__registry.values():
             element.tick()
 
@@ -125,7 +132,8 @@ class App:
                     on_page_change=self.__change_page
                 ),
                 VisualsPage: lambda: VisualsPage(ark=self.__ARK),
-                FooterComponent: lambda: FooterComponent(ark=self.__ARK),
+                FooterComponent: lambda: FooterComponent(),
+                # FooterComponent: lambda: FooterComponent(ark=self.__ARK),
                 StatsPage: lambda: StatsPage(),
                 LogsPage: lambda: LogsPage(),
                 SettingsPage: lambda: SettingsPage(),
@@ -153,5 +161,5 @@ class App:
         while dpg.is_dearpygui_running():
             self.__on_tick()
             dpg.render_dearpygui_frame()
-
+            self.__fps_cap()
         dpg.destroy_context()

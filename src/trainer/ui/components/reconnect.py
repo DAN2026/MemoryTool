@@ -6,7 +6,7 @@ from loguru import logger
 from trainer.ui.components.base import BaseComponent
 from trainer.ui.handlers.button import ButtonHandler
 from trainer.ui.styles import themes
-from trainer.ui.animations.animations import RotationTransition
+from trainer.ui.animations.rotation import RotationTransition
 
 
 class ReconnectButtonComponent(BaseComponent):
