@@ -5,7 +5,7 @@
 
 ****
 
-An educational, modular, and extensible memory training architecture built in Python to demonstrate runtime process data parsing and pointer structures.
+A memory tool made to modify memory of processes at runtime.
 
 ****
 
